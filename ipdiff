@@ -57,10 +57,11 @@ def main():
     if not any(host.addrs for host in hosts):
         print(f'{ap.prog}: no addresses found')
         sys.exit(1)
-    if hosts[0].addrs == hosts[1].addrs:
-        return
     if opts.tap:
         print_tap(*hosts)
+        return
+    if hosts[0].addrs == hosts[1].addrs:
+        return
     else:
         print_diff(*hosts)
         sys.exit(1)
