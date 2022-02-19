@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+
+# Copyright © 2022 Jakub Wilk <jwilk@jwilk.net>
+# SPDX-License-Identifier: MIT
+
+import argparse
+import difflib
+import socket
+import sys
+
+class Host():
+
+    def __init__(self, host):
+        self.host = host
+        addrs = set()
+        for ai in socket.getaddrinfo(host, 0):
+            addr = ai[4][0]
+            addrs.add(addr)
+        self.addrs = addrs
+
+    def __str__(self):
+        return self.host
+
+def print_diff(host1, host2):
+    diff = difflib.unified_diff(
+        sorted(host1.addrs),
+        sorted(host2.addrs),
+        fromfile=host1.host,
+        tofile=host2.host,
+        n=999,
+        lineterm='',
+    )
+    for line in diff:
+        print(line)
+
+def print_tap(*hosts):
+    all_addrs = set()
+    for host in hosts:
+        all_addrs |= host.addrs
+    ntests = len(hosts) * len(all_addrs)
+    print(1, '..', ntests, sep='')
+    i = 0
+    for addr in sorted(all_addrs):
+        for host in hosts:
+            i += 1
+            status = 'ok'
+            if addr not in host.addrs:
+                status = 'not ok'
+            print(status, i, addr, 'in', host)
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-T', '--TAP', dest='tap', action='store_true', help='use TAP output')
+    ap.add_argument('hosts', metavar='HOST', nargs=2)
+    opts = ap.parse_args()
+    hosts = [Host(host) for host in opts.hosts]
+    if not any(host.addrs for host in hosts):
+        print(f'{ap.prog}: no addresses found')
+        sys.exit(1)
+    if hosts[0].addrs == hosts[1].addrs:
+        return
+    if opts.tap:
+        print_tap(*hosts)
+    else:
+        print_diff(*hosts)
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()
+
+# vim:ts=4 sts=4 sw=4 et
