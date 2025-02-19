@@ -9,6 +9,8 @@ import difflib
 import socket
 import sys
 
+...  # Python 3 is required
+
 class Host:
 
     def __init__(self, host):
